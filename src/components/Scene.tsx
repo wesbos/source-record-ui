@@ -10,6 +10,7 @@ interface SceneProps {
 
 export function Scene({ sceneName }: SceneProps) {
   const obs = getOBS();
+
   const {
     sceneFilters,
     scenePreviews,
@@ -83,7 +84,7 @@ export function Scene({ sceneName }: SceneProps) {
                 >
                   {filter.filterEnabled ? 'Enabled' : 'Disabled'}
                 </button>
-                <pre>{JSON.stringify(filter, null, 2)}</pre>
+                {/* <pre>{JSON.stringify(filter, null, 2)}</pre> */}
               </li>
             ))}
           </ul>

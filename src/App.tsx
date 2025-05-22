@@ -40,7 +40,7 @@ export function App() {
   return (
     <div className="app">
       <StatusBar />
-      <OBSDebugger />
+      {/* <OBSDebugger /> */}
       {/* <OutputList /> */}
       <div className="scenes-grid">
         {scenes.map(scene => (

@@ -19,6 +19,14 @@ interface Output {
   outputFlags: number;
 }
 
+interface RecordState {
+  outputActive: boolean;
+  outputPaused: boolean;
+  outputTimecode: string;
+  outputDuration: number;
+  outputBytes: number;
+}
+
 interface OBSState {
   scenes: SceneItem[];
   sceneFilters: Record<string, Filter[]>;
@@ -29,7 +37,7 @@ interface OBSState {
   isConnected: boolean;
   isPolling: boolean;
   isStreaming: boolean;
-  isRecording: boolean;
+  recordState: RecordState;
   isVirtualCamActive: boolean;
 
   // Actions
@@ -45,6 +53,7 @@ interface OBSState {
 }
 
 let pollingInterval: NodeJS.Timeout | null = null;
+let recordStatusInterval: NodeJS.Timeout | null = null;
 
 export const useOBSStore = create<OBSState>()(
   devtools(
@@ -58,7 +67,13 @@ export const useOBSStore = create<OBSState>()(
       isConnected: false,
       isPolling: false,
       isStreaming: false,
-      isRecording: false,
+      recordState: {
+        outputActive: false,
+        outputPaused: false,
+        outputTimecode: '',
+        outputDuration: 0,
+        outputBytes: 0
+      },
       isVirtualCamActive: false,
 
       connect: async () => {
@@ -103,7 +118,11 @@ export const useOBSStore = create<OBSState>()(
           });
 
           obs.on('RecordStateChanged', (data) => {
-            set({ isRecording: data.outputActive }, false, 'RecordStateChanged');
+            set({ recordState: data }, false, 'RecordStateChanged');
+          });
+
+          obs.on('RecordStateChanged', (data) => {
+            console.info(`Record file changed:`, data);
           });
 
           obs.on('VirtualcamStateChanged', (data) => {
@@ -121,7 +140,7 @@ export const useOBSStore = create<OBSState>()(
             isConnected: true,
             error: null,
             isStreaming: streamState.outputActive,
-            isRecording: recordState.outputActive,
+            recordState,
             isVirtualCamActive: virtualCamState.outputActive
           }, false, 'Connected');
 
@@ -225,6 +244,9 @@ export const useOBSStore = create<OBSState>()(
         if (pollingInterval) {
           clearInterval(pollingInterval);
         }
+        if (recordStatusInterval) {
+          clearInterval(recordStatusInterval);
+        }
 
         const poll = async () => {
           const state = get();
@@ -243,11 +265,26 @@ export const useOBSStore = create<OBSState>()(
           }
         };
 
-        // Initial poll
-        poll();
+        const pollRecordStatus = async () => {
+          const state = get();
+          if (!state.isConnected) return;
 
-        // Set up interval
+          try {
+            const obs = getOBS();
+            const recordState = await obs.call('GetRecordStatus');
+            set({ recordState }, false, 'PolledRecordStatus');
+          } catch (error) {
+            console.error('Record status polling error:', error);
+          }
+        };
+
+        // Initial polls
+        poll();
+        pollRecordStatus();
+
+        // Set up intervals
         pollingInterval = setInterval(poll, 33);
+        recordStatusInterval = setInterval(pollRecordStatus, 1000);
         set({ isPolling: true }, false, 'StartedPolling');
       },
 
@@ -255,6 +292,10 @@ export const useOBSStore = create<OBSState>()(
         if (pollingInterval) {
           clearInterval(pollingInterval);
           pollingInterval = null;
+        }
+        if (recordStatusInterval) {
+          clearInterval(recordStatusInterval);
+          recordStatusInterval = null;
         }
         set({ isPolling: false }, false, 'StoppedPolling');
       },
