@@ -1,0 +1,55 @@
+.status-bar {
+  display: flex;
+  gap: 1rem;
+  padding: 0.5rem 1rem;
+  background: #1a1a1a;
+  border-bottom: 1px solid #333;
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.status-icon {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  position: relative;
+}
+
+.status-icon.active {
+  background: #4caf50;
+  box-shadow: 0 0 8px #4caf50;
+}
+
+.status-icon.inactive {
+  background: #666;
+}
+
+.status-icon.connection.active {
+  background: #2196f3;
+  box-shadow: 0 0 8px #2196f3;
+}
+
+.status-icon.stream.active {
+  background: #f44336;
+  box-shadow: 0 0 8px #f44336;
+}
+
+.status-icon.record.active {
+  background: #f44336;
+  box-shadow: 0 0 8px #f44336;
+}
+
+.status-icon.virtual-cam.active {
+  background: #9c27b0;
+  box-shadow: 0 0 8px #9c27b0;
+}
+
+.status-label {
+  color: #fff;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
