@@ -7,9 +7,12 @@
     "dev": "vite",
     "build": "vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "npm run build && vite preview",
+    "deploy": "npm run build && wrangler deploy",
+    "cf-typegen": "wrangler types"
   },
   "dependencies": {
+    "@cloudflare/vite-plugin": "^1.7.5",
     "obs-websocket-js": "^5.0.6",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",

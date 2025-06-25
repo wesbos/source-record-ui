@@ -34,3 +34,8 @@ yarn-error.log*
 
 # TypeScript
 *.tsbuildinfo
+
+# Sample
+my-react-app/
+
+.wrangler
