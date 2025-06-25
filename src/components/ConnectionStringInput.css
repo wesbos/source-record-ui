@@ -5,6 +5,11 @@
   height: 100vh;
   background-color: #f0f0f0;
   flex-direction: column;
+  img {
+    max-width: 500px;
+    width: 100%;
+    margin-bottom: 2rem;
+  }
 }
 
 .connection-string-container form {

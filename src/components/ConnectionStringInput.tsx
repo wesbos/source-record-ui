@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import Demo from '../assets/demo.png';
 
 interface ConnectionStringInputProps {
   onConnect: (connectionString: string, password?: string) => void;
@@ -19,6 +20,7 @@ export function ConnectionStringInput({ onConnect, initialConnectionString = '',
 
   return (
     <div className="connection-string-container">
+      <img src={Demo} alt="OBS Source Record UI" />
       <form onSubmit={handleSubmit}>
         <h2>Enter OBS WebSocket Connection String</h2>
         {error && <div className="error-message">{error}</div>}

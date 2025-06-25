@@ -2,7 +2,7 @@
 
 Available at [obs.wesbos.com](https://obs.wesbos.com)
 
-![](./src/demo.png)
+![](./src/assets/demo.png)
 
 OBS source record is great, but the UI for adding filters makes it hard to see what you are really recording.
 
