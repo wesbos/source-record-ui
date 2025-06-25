@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useOBSStore } from './store/obsStore';
 import { Scene } from './components/Scene';
 import { StatusBar } from './components/StatusBar';
@@ -6,23 +6,34 @@ import { OBSDebugger } from './components/OBSDebugger';
 import { OutputList } from './components/OutputList';
 import './App.css';
 import { RecordButton } from './components/RecordButton';
+import { ConnectionStringInput } from './components/ConnectionStringInput';
+import './components/ConnectionStringInput.css';
 
 export function App() {
+  const [connectionString, setConnectionString] = useState(localStorage.getItem('obsConnectionString'));
+  const [password, setPassword] = useState(localStorage.getItem('obsPassword'));
+  const [isConnecting, setIsConnecting] = useState(false);
   const connect = useOBSStore(state => state.connect);
   const fetchScenes = useOBSStore(state => state.fetchScenes);
   const startPolling = useOBSStore(state => state.startPolling);
   const stopPolling = useOBSStore(state => state.stopPolling);
   const isConnected = useOBSStore(state => state.isConnected);
   const scenes = useOBSStore(state => state.scenes);
+  const error = useOBSStore(state => state.error);
 
   useEffect(() => {
     const init = async () => {
-      try {
-        await connect();
-        await fetchScenes();
-        startPolling();
-      } catch (error) {
-        console.error('Failed to initialize:', error);
+      if (connectionString) {
+        setIsConnecting(true);
+        try {
+          await connect(connectionString, password || undefined);
+          await fetchScenes();
+          startPolling();
+        } catch (error) {
+          console.error('Failed to initialize:', error);
+        } finally {
+          setIsConnecting(false);
+        }
       }
     };
 
@@ -31,10 +42,23 @@ export function App() {
     return () => {
       stopPolling();
     };
-  }, [connect, fetchScenes, startPolling, stopPolling]);
+  }, [connect, fetchScenes, startPolling, stopPolling, connectionString, password]);
+
+  const handleConnect = (newConnectionString: string, newPassword?: string) => {
+    localStorage.setItem('obsConnectionString', newConnectionString);
+    if (newPassword) {
+      localStorage.setItem('obsPassword', newPassword);
+    }
+    setConnectionString(newConnectionString);
+    setPassword(newPassword || null);
+  };
+
+  if (isConnecting) {
+    return <div className="app-loading">Connecting to OBS...</div>;
+  }
 
   if (!isConnected) {
-    return <div className="app-error">Not connected to OBS</div>;
+    return <ConnectionStringInput onConnect={handleConnect} initialConnectionString={connectionString || 'ws://127.0.0.1:4455'} error={error} />;
   }
 
   return (

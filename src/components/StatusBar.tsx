@@ -36,11 +36,17 @@ function formatTimecode(timecode: string | undefined): string {
 export function StatusBar() {
   const { isConnected, isStreaming, recordState, isVirtualCamActive } = useOBSStore();
 
+  const handleEditConnection = () => {
+    localStorage.removeItem('obsConnectionString');
+    window.location.reload(); // Force a reload to show the connection input
+  };
+
   return (
     <div className="status-bar">
       <div className="status-item">
         <div className={`status-icon connection ${isConnected ? 'active' : 'inactive'}`} />
         <span className="status-label">OBS</span>
+        <button onClick={handleEditConnection} className="edit-connection-button">Edit</button>
       </div>
       <div className="status-item">
         <div className={`status-icon stream ${isStreaming ? 'active' : 'inactive'}`} />

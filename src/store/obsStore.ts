@@ -41,7 +41,7 @@ interface OBSState {
   isVirtualCamActive: boolean;
 
   // Actions
-  connect: () => Promise<void>;
+  connect: (connectionString: string, password?: string) => Promise<void>;
   fetchScenes: () => Promise<void>;
   fetchSceneFilters: (sceneName: string) => Promise<void>;
   fetchScenePreview: (sceneName: string) => Promise<void>;
@@ -76,9 +76,9 @@ export const useOBSStore = create<OBSState>()(
       },
       isVirtualCamActive: false,
 
-      connect: async () => {
+      connect: async (connectionString: string, password?: string) => {
         try {
-          await connectOBS();
+          await connectOBS(connectionString, password);
           const obs = getOBS();
 
           // Set up global event listeners
@@ -143,8 +143,8 @@ export const useOBSStore = create<OBSState>()(
             isVirtualCamActive: virtualCamState.outputActive
           }, false, 'Connected');
 
-        } catch (error) {
-          set({ error: 'Failed to connect to OBS', isConnected: false }, false, 'ConnectionError');
+        } catch (error: any) {
+          set({ error: error.message || 'Failed to connect to OBS', isConnected: false }, false, 'ConnectionError');
           throw error;
         }
       },

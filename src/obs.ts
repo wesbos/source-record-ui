@@ -11,7 +11,7 @@ export function getOBS(): OBSWebSocket {
   return obs;
 }
 
-export async function connectOBS(): Promise<OBSWebSocket> {
+export async function connectOBS(connectionString: string, password?: string): Promise<OBSWebSocket> {
   if (isConnected && obs) {
     return obs;
   }
@@ -19,7 +19,7 @@ export async function connectOBS(): Promise<OBSWebSocket> {
     return connectPromise;
   }
   obs = getOBS();
-  connectPromise = obs.connect('ws://127.0.0.1:4455', undefined, {
+  connectPromise = obs.connect(connectionString, password, {
     eventSubscriptions: EventSubscription.All | EventSubscription.InputVolumeMeters,
     rpcVersion: 1
   })
