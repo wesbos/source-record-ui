@@ -2,10 +2,7 @@ import { useEffect, useState } from 'react';
 import { useOBSStore } from './store/obsStore';
 import { Scene } from './components/Scene';
 import { StatusBar } from './components/StatusBar';
-import { OBSDebugger } from './components/OBSDebugger';
-import { OutputList } from './components/OutputList';
 import './App.css';
-import { RecordButton } from './components/RecordButton';
 import { ConnectionStringInput } from './components/ConnectionStringInput';
 import './components/ConnectionStringInput.css';
 
@@ -71,6 +68,16 @@ export function App() {
           <Scene key={scene.sceneName} sceneName={scene.sceneName} />
         ))}
       </div>
+      <footer className="app-footer">
+        <a
+          href="https://github.com/wesbos/source-record-ui"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="github-link"
+        >
+          Made by Wes Bos ❤️ × Source on GitHub
+        </a>
+      </footer>
     </div>
   );
 }

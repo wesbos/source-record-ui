@@ -1,4 +1,3 @@
-
 .connection-string-container {
   display: flex;
   justify-content: center;
@@ -39,6 +38,7 @@
 }
 
 .instructions {
+  text-align: left;
   background-color: white;
   padding: 2rem;
   border-radius: 8px;

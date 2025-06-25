@@ -1,5 +1,9 @@
 # OBS Source Record UI
 
+Available at [obs.wesbos.com](https://obs.wesbos.com)
+
+![](./src/demo.png)
+
 OBS source record is great, but the UI for adding filters makes it hard to see what you are really recording.
 
 This project aims to provide:
@@ -9,4 +13,6 @@ This project aims to provide:
 3. buttons to start + stop recording
 4. automatic renaming of the files - they should match up to the name of the scene and not overlap others.
 
-A WIP...
+## Dev
+
+`npm install` then `npm run dev`.
