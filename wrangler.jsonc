@@ -12,5 +12,11 @@
   },
   "observability": {
     "enabled": true
-  }
+  },
+  "routes": [
+    {
+      "pattern": "obs.wesbos.com",
+      "custom_domain": true
+    }
+  ]
 }
