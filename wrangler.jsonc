@@ -4,7 +4,7 @@
  */
 {
   "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "my-react-app",
+  "name": "source-record-ui",
   "main": "worker/index.ts",
   "compatibility_date": "2025-06-20",
   "assets": {
