@@ -102,7 +102,6 @@ export const useOBSStore = create<OBSState>()(
             });
           });
 
-
           // Add source change listener
           obs.on('SceneItemAdded', async (data) => {
             await get().fetchSceneSources(data.sceneName);
