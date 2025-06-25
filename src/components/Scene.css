@@ -56,13 +56,21 @@
 
 .source-item,
 .filter-item {
-  /* display: flex; */
+  display: flex;
   align-items: center;
   gap: 0.5rem;
   padding: 0.5rem;
   background: #333;
   border-radius: 4px;
   font-size: 0.875rem;
+}
+
+.source-icon {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
+  opacity: 0.8;
+  filter: invert(1) brightness(1);
 }
 
 pre {
