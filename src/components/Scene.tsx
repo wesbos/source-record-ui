@@ -90,7 +90,6 @@ export function Scene({ sceneName }: SceneProps) {
   if (error) {
     return <div className="scene-error">{error}</div>;
   }
-  console.log(sources);
   return (
     <div className="scene">
       <h2 className="scene-title">{sceneName}</h2>

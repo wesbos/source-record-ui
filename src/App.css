@@ -1,5 +1,6 @@
 #root {
   margin: 0 auto;
+  width: 100%;
   text-align: center;
 }
 
@@ -141,10 +142,13 @@
 }
 
 .app-footer {
-  padding: 1rem;
+  padding: 0;
   text-align: center;
   background: #1a1a1a;
   border-top: 1px solid #333;
+  a {
+    font-size: 11px;
+  }
 }
 
 .github-link {

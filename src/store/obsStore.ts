@@ -259,6 +259,8 @@ export const useOBSStore = create<OBSState>()(
               ),
               state.fetchOutputs()
             ]);
+            // Recursively call the poll function again as soon as possible
+            poll();
           } catch (error) {
             console.error('Polling error:', error);
           }
@@ -282,7 +284,7 @@ export const useOBSStore = create<OBSState>()(
         pollRecordStatus();
 
         // Set up intervals
-        pollingInterval = setInterval(poll, 33);
+        // pollingInterval = setInterval(poll, 5000);
         recordStatusInterval = setInterval(pollRecordStatus, 1000);
         set({ isPolling: true }, false, 'StartedPolling');
       },
