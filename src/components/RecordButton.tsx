@@ -10,46 +10,52 @@ interface Filter {
   filterEnabled: boolean;
 }
 
+
+
 export function RecordButton() {
-  const { recordState } = useOBSStore();
+  const recordStatus = useOBSStore(state => state.recordStatus);
+  const recordState = useOBSStore(state => state.recordState);
   const filters = useOBSStore(state => state.sceneFilters);
   const scenesorSourcesWithRecordFilter = Object.values(filters).flat().filter(filter =>
     filter.filterKind === 'source_record_filter' && filter.filterEnabled
   );
 
+
   return (
     <div className="record-buttons">
-      {!recordState?.outputActive ? (
+      {!recordState?.outputState || recordState?.outputState === "OBS_WEBSOCKET_OUTPUT_STOPPED" ? (
         <button
           className="record-button start"
           onClick={async () => {
             try {
-              console.info(`Starting recording for ${scenesorSourcesWithRecordFilter.length} scenes`);
+              console.info(
+                `Starting recording for ${scenesorSourcesWithRecordFilter.length} scenes`
+              );
               for (const sourceName in filters) {
                 for (const filter of filters[sourceName]) {
-                  if (filter.filterKind !== 'source_record_filter') continue;
+                  if (filter.filterKind !== "source_record_filter") continue;
                   const filterName = `Source Record - ${sourceName}`;
                   const filename = `%CCYY-%MM-%DD %I %mm %ss %p/${sourceName}`;
 
                   if (filter.filterName !== filterName) {
-                    await obs.call('SetSourceFilterName', {
+                    await obs.call("SetSourceFilterName", {
                       sourceName: sourceName,
                       filterName: filter.filterName,
-                      newFilterName: filterName
+                      newFilterName: filterName,
                     });
                   }
 
-                  await obs.call('SetSourceFilterSettings', {
+                  await obs.call("SetSourceFilterSettings", {
                     sourceName: sourceName,
                     filterName,
                     overlay: true,
-                    filterSettings: { filename_formatting: filename }
+                    filterSettings: { filename_formatting: filename },
                   });
                 }
               }
-              await obs.call('StartRecord');
+              await obs.call("StartRecord");
             } catch (error) {
-              console.error('Failed to start recording:', error);
+              console.error("Failed to start recording:", error);
             }
           }}
           title={`Start Recording (${scenesorSourcesWithRecordFilter.length} scenes)`}
@@ -61,14 +67,19 @@ export function RecordButton() {
           className="record-button stop"
           onClick={async () => {
             try {
-              await obs.call('StopRecord');
+              await obs.call("StopRecord");
             } catch (error) {
-              console.error('Failed to stop recording:', error);
+              console.error("Failed to stop recording:", error);
             }
           }}
           title="Stop Recording"
+          disabled={recordState.outputState === "OBS_WEBSOCKET_OUTPUT_STOPPING"}
         >
-          Stop Recording
+          {recordState.outputState === "OBS_WEBSOCKET_OUTPUT_STOPPING" && "Stopping..."}
+          {recordState.outputState === "OBS_WEBSOCKET_OUTPUT_STOPPED" && "Stopped"}
+          {recordState.outputState === "OBS_WEBSOCKET_OUTPUT_PAUSED" && "Paused"}
+          {recordState.outputState === "OBS_WEBSOCKET_OUTPUT_RESUMED" && "Resumed"}
+          {recordState.outputState === "OBS_WEBSOCKET_OUTPUT_STARTED" && "Stop Recording"}
         </button>
       )}
     </div>

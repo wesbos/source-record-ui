@@ -20,6 +20,8 @@ export function App() {
   const scenes = useOBSStore(state => state.scenes);
   const sceneSources = useOBSStore(state => state.sceneSources);
   const error = useOBSStore(state => state.error);
+  const recordStatus = useOBSStore((state) => state.recordStatus);
+  const recordState = useOBSStore((state) => state.recordState);
 
   useEffect(() => {
     const init = async () => {
@@ -80,10 +82,14 @@ export function App() {
     }))
   ];
 
+
+
   return (
-    <div className="app">
+    <div className="app" data-record-state={recordState.outputState}>
       <StatusBar />
-      {/* <OBSDebugger /> */}
+      <p className="white">Record Status: {JSON.stringify(recordStatus)}</p>
+      <p className="white">Record State: {JSON.stringify(recordState)}</p>
+      <OBSDebugger />
       <div className="scenes-grid">
         {mediaItems.map(item => (
           <MediaItem

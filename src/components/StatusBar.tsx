@@ -34,7 +34,10 @@ function formatTimecode(timecode: string | undefined): string {
 }
 
 export function StatusBar() {
-  const { isConnected, isStreaming, recordState, isVirtualCamActive } = useOBSStore();
+  const isConnected = useOBSStore(state => state.isConnected);
+  const isStreaming = useOBSStore(state => state.isStreaming);
+  const recordStatus = useOBSStore(state => state.recordStatus);
+  const isVirtualCamActive = useOBSStore(state => state.isVirtualCamActive);
 
   const handleEditConnection = () => {
     localStorage.removeItem('obsConnectionString');
@@ -53,12 +56,12 @@ export function StatusBar() {
         <span className="status-label">Stream</span>
       </div>
       <div className="status-item">
-        <div className={`status-icon record ${recordState?.outputActive ? 'active' : 'inactive'}`} />
+        <div className={`status-icon record ${recordStatus?.outputActive ? 'active' : 'inactive'}`} />
         <span className="status-label">Record</span>
-        {recordState?.outputActive && (
+        {recordStatus?.outputActive && (
           <div className="record-details">
-            <span className="record-time">{formatTimecode(recordState.outputTimecode)}</span>
-            <span className="record-size">{formatFileSize(recordState.outputBytes)}</span>
+            <span className="record-time">{formatTimecode(recordStatus.outputTimecode)}</span>
+            <span className="record-size">{formatFileSize(recordStatus.outputBytes)}</span>
           </div>
         )}
       </div>

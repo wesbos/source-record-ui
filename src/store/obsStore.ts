@@ -31,12 +31,24 @@ interface Output {
   outputActive: boolean;
 }
 
-interface RecordState {
+type OBS_OUTPUT_STATE =
+  | "OBS_WEBSOCKET_OUTPUT_STARTING"
+  | "OBS_WEBSOCKET_OUTPUT_STARTED"
+  | "OBS_WEBSOCKET_OUTPUT_STOPPING"
+  | "OBS_WEBSOCKET_OUTPUT_STOPPED"
+  | "OBS_WEBSOCKET_OUTPUT_PAUSED"
+  | "OBS_WEBSOCKET_OUTPUT_RESUMED";
+
+interface RecordStatus {
   outputActive: boolean;
   outputPaused: boolean;
   outputTimecode: string;
   outputDuration: number;
   outputBytes: number;
+}
+
+interface RecordState {
+  outputState: OBS_OUTPUT_STATE;
 }
 
 interface OBSState {
@@ -49,7 +61,7 @@ interface OBSState {
   isConnected: boolean;
   isPolling: boolean;
   isStreaming: boolean;
-  recordState: RecordState;
+  recordStatus: RecordStatus;
   isVirtualCamActive: boolean;
 
   // Actions
@@ -80,6 +92,9 @@ export const useOBSStore = create<OBSState>()(
       isPolling: false,
       isStreaming: false,
       recordState: {
+        outputState: undefined
+      },
+      recordStatus: {
         outputActive: false,
         outputPaused: false,
         outputTimecode: '',
@@ -143,7 +158,7 @@ export const useOBSStore = create<OBSState>()(
           });
 
           // Get initial states. TODO Batch this instead of three calls
-          const [streamState, recordState, virtualCamState] = await Promise.all([
+          const [streamState, recordStatus, virtualCamState] = await Promise.all([
             obs.call('GetStreamStatus'),
             obs.call('GetRecordStatus'),
             obs.call('GetVirtualCamStatus')
@@ -153,7 +168,7 @@ export const useOBSStore = create<OBSState>()(
             isConnected: true,
             error: null,
             isStreaming: streamState.outputActive,
-            recordState,
+            recordStatus,
             isVirtualCamActive: virtualCamState.outputActive
           }, false, 'Connected');
 
@@ -337,8 +352,9 @@ export const useOBSStore = create<OBSState>()(
 
           try {
             const obs = getOBS();
-            const recordState = await obs.call('GetRecordStatus');
-            set({ recordState }, false, 'PolledRecordStatus');
+            const recordStatus = await obs.call('GetRecordStatus');
+            set({ reecordStatus }, false, 'PolledRecordStatus');
+            setTimeout(pollRecordStatus, 1000);
           } catch (error) {
             console.error('Record status polling error:', error);
           }
@@ -347,9 +363,6 @@ export const useOBSStore = create<OBSState>()(
         // Initial polls
         poll();
         pollRecordStatus();
-        // Set up intervals
-        // pollingInterval = setInterval(poll, 5000);
-        // recordStatusInterval = setInterval(pollRecordStatus, 1000);
         set({ isPolling: true }, false, 'StartedPolling');
       },
 
