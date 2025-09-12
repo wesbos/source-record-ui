@@ -54,7 +54,7 @@ export function RecordButton() {
           }}
           title={`Start Recording (${scenesWithRecordFilter.length} scenes)`}
         >
-          Start Recording ({scenesWithRecordFilter.length} scenes)
+          Start Recording ({scenesWithRecordFilter.length} sources)
         </button>
       ) : (
         <button

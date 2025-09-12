@@ -6,6 +6,7 @@ import './App.css';
 import { ConnectionStringInput } from './components/ConnectionStringInput';
 import './components/ConnectionStringInput.css';
 import { OBSDebugger } from './components/OBSDebugger';
+import { Sources } from './components/Sources';
 
 export function App() {
   const [connectionString, setConnectionString] = useState(localStorage.getItem('obsConnectionString'));
@@ -69,6 +70,7 @@ export function App() {
           <Scene key={scene.sceneName} sceneName={scene.sceneName} />
         ))}
       </div>
+        <Sources />
       <footer className="app-footer">
         <a
           href="https://github.com/wesbos/source-record-ui"

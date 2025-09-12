@@ -28,7 +28,7 @@ interface SourceWithInputKind extends Source {
 }
 
 // Function to get the appropriate icon for a source type
-function getSourceIcon(inputKind: InputKind): string {
+export function getSourceIcon(inputKind: InputKind): string {
   const iconMap: Record<InputKind, string> = {
     image_source: imageIcon,
     color_source_v3: brushIcon,
@@ -51,32 +51,42 @@ function getSourceIcon(inputKind: InputKind): string {
   return iconMap[inputKind] || defaultIcon;
 }
 
-export function Scene({ sceneName }: SceneProps) {
+export function Filters({ sourceName }: { sourceName: string }) {
   const obs = getOBS();
+  const sceneFilters = useOBSStore(state => state.sceneFilters);
+  const filters = sceneFilters[sourceName] || [];
+  return (
+    <ul className="filter-list">
+      {filters.map((filter) => (
+        <li key={filter.filterName} className="filter-item">
+          <span className="filter-name">{filter.filterName}</span>
+          <button
+            className={`filter-enabled ${
+              filter.filterEnabled ? "active" : "inactive"
+            }`}
+            onClick={() => {
+              obs.call("SetSourceFilterEnabled", {
+                sourceName,
+                filterName: filter.filterName,
+                filterEnabled: !filter.filterEnabled,
+              });
+            }}
+          >
+            {filter.filterEnabled ? "Enabled" : "Disabled"}
+          </button>
+          {/* <pre>{JSON.stringify(filter, null, 2)}</pre> */}
+        </li>
+      ))}
+    </ul>
+  );
+}
 
-  const {
-    sceneFilters,
-    scenePreviews,
-    sceneSources,
-    error,
-    fetchSceneFilters,
-    fetchScenePreview,
-  } = useOBSStore();
+export function Scene({ sceneName }: SceneProps) {
+  const sceneFilters = useOBSStore(state => state.sceneFilters);
+  const scenePreviews = useOBSStore(state => state.scenePreviews);
+  const sceneSources = useOBSStore(state => state.sceneSources);
+  const error = useOBSStore(state => state.error);
 
-  useEffect(() => {
-    const init = async () => {
-      try {
-        await Promise.all([
-          fetchSceneFilters(sceneName),
-          fetchScenePreview(sceneName),
-        ]);
-      } catch (err) {
-        console.error(`Failed to initialize scene ${sceneName}:`, err);
-      }
-    };
-
-    init();
-  }, [sceneName, fetchSceneFilters, fetchScenePreview]);
 
   const filters = sceneFilters[sceneName] || [];
   const previewUrl = scenePreviews[sceneName] || null;
@@ -118,28 +128,7 @@ export function Scene({ sceneName }: SceneProps) {
         </div>
         <div className="scene-filters">
           <h3>Filters</h3>
-          <ul className="filter-list">
-            {filters.map((filter) => (
-              <li key={filter.filterName} className="filter-item">
-                <span className="filter-name">{filter.filterName}</span>
-                <button
-                  className={`filter-enabled ${
-                    filter.filterEnabled ? "active" : "inactive"
-                  }`}
-                  onClick={() => {
-                    obs.call("SetSourceFilterEnabled", {
-                      sourceName: sceneName,
-                      filterName: filter.filterName,
-                      filterEnabled: !filter.filterEnabled,
-                    });
-                  }}
-                >
-                  {filter.filterEnabled ? "Enabled" : "Disabled"}
-                </button>
-                {/* <pre>{JSON.stringify(filter, null, 2)}</pre> */}
-              </li>
-            ))}
-          </ul>
+          <Filters sourceName={sceneName} />
         </div>
         {outputs.map((output) => (
           <Output key={output.outputName} output={output} />

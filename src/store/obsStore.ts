@@ -3,7 +3,7 @@ import { devtools } from 'zustand/middleware';
 import { connectOBS, getOBS } from '../obs';
 import { SceneItem, Filter, SceneListResponse, SourceFilterListResponse, SourceScreenshotResponse } from '../types/obs';
 import { RequestBatchRequest } from 'obs-websocket-js';
-import { uniqueSceneSources } from '../components/Sources';
+import { uniqueSceneSources } from '../utils/sources';
 
 export interface Source {
   sourceName: string;
@@ -11,6 +11,7 @@ export interface Source {
   sourceWidth: number;
   sourceHeight: number;
   sourceUuid: string;
+  inputKind: string;
 }
 
 interface Output {
@@ -106,7 +107,7 @@ export const useOBSStore = create<OBSState>()(
           });
 
           // Add source change listener
-          obs.on('SceneItemAdded', async (data) => {
+          obs.on('SceneItemCreated', async (data) => {
             console.debug('SceneItemAdded', data);
             await get().fetchSceneSources([data.sceneName]);
           });
@@ -315,8 +316,9 @@ export const useOBSStore = create<OBSState>()(
           if (!state.isConnected) return;
 
           try {
-            const sourceNames = state.scenes.map(scene => scene.sceneName);
-            await state.fetchScenePreview(sourceNames);
+            const sceneNames = state.scenes.map(scene => scene.sceneName);
+            const sourceNames = uniqueSceneSources(state.sceneSources).map(source => source.sourceName);
+            await state.fetchScenePreview([...sceneNames, ...sourceNames]);
             // Recursively call the poll function again as soon as possible
             setTimeout(poll, 33);
             // poll();
