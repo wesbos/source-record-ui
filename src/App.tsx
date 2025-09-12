@@ -5,6 +5,7 @@ import { StatusBar } from './components/StatusBar';
 import './App.css';
 import { ConnectionStringInput } from './components/ConnectionStringInput';
 import './components/ConnectionStringInput.css';
+import { OBSDebugger } from './components/OBSDebugger';
 
 export function App() {
   const [connectionString, setConnectionString] = useState(localStorage.getItem('obsConnectionString'));
@@ -61,7 +62,7 @@ export function App() {
   return (
     <div className="app">
       <StatusBar />
-      {/* <OBSDebugger /> */}
+      <OBSDebugger />
       {/* <OutputList /> */}
       <div className="scenes-grid">
         {scenes.map(scene => (

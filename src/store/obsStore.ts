@@ -3,12 +3,12 @@ import { devtools } from 'zustand/middleware';
 import { connectOBS, getOBS } from '../obs';
 import { SceneItem, Filter, SceneListResponse, SourceFilterListResponse, SourceScreenshotResponse } from '../types/obs';
 
-interface Source {
+export interface Source {
   sourceName: string;
   sourceType: string;
   sourceWidth: number;
   sourceHeight: number;
-  sourceId: number;
+  sourceUuid: string;
 }
 
 interface Output {
@@ -260,7 +260,8 @@ export const useOBSStore = create<OBSState>()(
               state.fetchOutputs()
             ]);
             // Recursively call the poll function again as soon as possible
-            poll();
+            setTimeout(poll, 5000);
+            // poll();
           } catch (error) {
             console.error('Polling error:', error);
           }
@@ -282,7 +283,6 @@ export const useOBSStore = create<OBSState>()(
         // Initial polls
         poll();
         pollRecordStatus();
-
         // Set up intervals
         // pollingInterval = setInterval(poll, 5000);
         recordStatusInterval = setInterval(pollRecordStatus, 1000);

@@ -29,6 +29,12 @@ export function OBSDebugger() {
         })}>
           GetSourceFilter
         </button>
+        <button onClick={() => makeCall('GetSourceActive')}>
+          GetSourceActive
+        </button>
+        <button onClick={() => makeCall('GetInputList')}>
+          GetInputList
+        </button>
         <button onClick={() => makeCall('GetInputKindList')}>
           GetInputKindList
         </button>
