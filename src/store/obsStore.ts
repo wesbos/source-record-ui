@@ -2,6 +2,8 @@ import { create } from 'zustand';
 import { devtools } from 'zustand/middleware';
 import { connectOBS, getOBS } from '../obs';
 import { SceneItem, Filter, SceneListResponse, SourceFilterListResponse, SourceScreenshotResponse } from '../types/obs';
+import { RequestBatchRequest } from 'obs-websocket-js';
+import { uniqueSceneSources } from '../components/Sources';
 
 export interface Source {
   sourceName: string;
@@ -43,9 +45,9 @@ interface OBSState {
   // Actions
   connect: (connectionString: string, password?: string) => Promise<void>;
   fetchScenes: () => Promise<void>;
-  fetchSceneFilters: (sceneName: string) => Promise<void>;
-  fetchScenePreview: (sceneName: string) => Promise<void>;
-  fetchSceneSources: (sceneName: string) => Promise<void>;
+  fetchSceneFilters: (sourceNames: string[]) => Promise<void>;
+  fetchScenePreview: (sourceNames: string[]) => Promise<void>;
+  fetchSceneSources: (sceneNames: string[]) => Promise<void>;
   fetchOutputs: () => Promise<void>;
   startPolling: () => void;
   stopPolling: () => void;
@@ -98,37 +100,44 @@ export const useOBSStore = create<OBSState>()(
 
           filterEvents.forEach(event => {
             obs.on(event, (data) => {
-              get().fetchSceneFilters(data.sourceName);
+              console.debug(event, data);
+              get().fetchSceneFilters([data.sourceName]);
             });
           });
 
           // Add source change listener
           obs.on('SceneItemAdded', async (data) => {
-            await get().fetchSceneSources(data.sceneName);
+            console.debug('SceneItemAdded', data);
+            await get().fetchSceneSources([data.sceneName]);
           });
 
           obs.on('SceneItemRemoved', async (data) => {
-            await get().fetchSceneSources(data.sceneName);
+            console.debug('SceneItemRemoved', data);
+            await get().fetchSceneSources([data.sceneName]);
           });
 
           // Add status event listeners
           obs.on('StreamStateChanged', (data) => {
+            console.debug('StreamStateChanged', data);
             set({ isStreaming: data.outputActive }, false, 'StreamStateChanged');
           });
 
           obs.on('RecordStateChanged', (data) => {
+            console.debug('RecordStateChanged', data);
             set({ recordState: data }, false, 'RecordStateChanged');
           });
 
           obs.on('RecordStateChanged', (data) => {
+            console.debug('RecordFileChanged', data);
             console.info(`Record file changed:`, data);
           });
 
           obs.on('VirtualcamStateChanged', (data) => {
+            console.debug('VirtualcamStateChanged', data);
             set({ isVirtualCamActive: data.outputActive }, false, 'VirtualcamStateChanged');
           });
 
-          // Get initial states
+          // Get initial states. TODO Batch this instead of three calls
           const [streamState, recordState, virtualCamState] = await Promise.all([
             obs.call('GetStreamStatus'),
             obs.call('GetRecordStatus'),
@@ -150,80 +159,134 @@ export const useOBSStore = create<OBSState>()(
       },
 
       fetchScenes: async () => {
+        console.debug('Fetching scenes');
         try {
           const obs = getOBS();
           const sceneList = await obs.call('GetSceneList') as unknown as SceneListResponse;
           set({ scenes: sceneList.scenes, error: null }, false, 'FetchedScenes');
 
-          // Fetch sources for each scene
-          await Promise.all(
-            sceneList.scenes.map(scene => get().fetchSceneSources(scene.sceneName))
-          );
+          // Fetch sources + filters for all scenes in batch. This usually happens on initial load and then we only listen for changes scene-by-scene.
+          const sceneNames = sceneList.scenes.map(scene => scene.sceneName);
+          await get().fetchSceneSources(sceneNames);
+          const sources = uniqueSceneSources(get().sceneSources);
+          const sourceNames = sources.map(source => source.sourceName);
+          // then get the fillter for all scenes AND sources
+          await get().fetchSceneFilters([...sceneNames, ...sourceNames]);
+
         } catch (error) {
           set({ error: 'Failed to fetch scenes' }, false, 'FetchScenesError');
           throw error;
         }
       },
 
-      fetchSceneFilters: async (sceneName: string) => {
+      fetchSceneFilters: async (sourceNames: string[]) => {
+        if (!sourceNames?.length) return;
+        console.debug('Fetching filters for sources', sourceNames);
         try {
           const obs = getOBS();
-          const response = await obs.call('GetSourceFilterList', {
-            sourceName: sceneName
-          }) as unknown as SourceFilterListResponse;
+          // Create batch request for multiple source filters
+          const request: RequestBatchRequest[] = sourceNames.map((sourceName) => ({
+            requestType: 'GetSourceFilterList',
+            requestId: sourceName, // This is so we can line them up with the source names in the response
+            requestData: {
+              sourceName
+            }
+          }));
+
+          const responses = await obs.callBatch(request, {
+            // Parallel execution is disabled as the data is returned in a random order: https://github.com/obsproject/obs-websocket/issues/1317
+            // executionType: 2 // Parallel
+          });
+
+          // Line them up with the source names and create the filters object
+          const filtersWithSourceNames = Object.fromEntries(
+            responses.map((response) => [
+              response.requestId,
+              (response.responseData as unknown as SourceFilterListResponse)?.filters || []
+            ])
+          );
 
           set((state) => ({
             sceneFilters: {
               ...state.sceneFilters,
-              [sceneName]: response.filters
+              ...filtersWithSourceNames
             },
             error: null
-          }), false, `FetchedFilters_${sceneName}`);
+          }), false, `FetchedFilters_${sourceNames.join(',')}`);
         } catch (error) {
-          set({ error: `Failed to fetch filters for ${sceneName}` }, false, `FetchFiltersError_${sceneName}`);
+          set({ error: `Failed to fetch filters for ${sourceNames.join(', ')}` }, false, `FetchFiltersError_${sourceNames.join(',')}`);
           throw error;
         }
       },
 
-      fetchScenePreview: async (sceneName: string) => {
+      fetchScenePreview: async (sourceNames: string[]) => {
+        if (!sourceNames?.length) return;
+        // console.debug('Fetching preview for sources', sourceNames);
         try {
           const obs = getOBS();
-          const preview = await obs.call('GetSourceScreenshot', {
-            sourceName: sceneName,
-            imageFormat: 'png',
-            imageWidth: Math.floor(1920 / 4),
-            imageHeight: Math.floor(1080 / 4)
-          }) as unknown as SourceScreenshotResponse;
-
-          set((state) => ({
-            scenePreviews: {
-              ...state.scenePreviews,
-              [sceneName]: preview.imageData
-            },
-            error: null
-          }), false, `FetchedPreview_${sceneName}`);
-        } catch (error) {
-          set({ error: `Failed to fetch preview for ${sceneName}` }, false, `FetchPreviewError_${sceneName}`);
-          throw error;
-        }
-      },
-
-      fetchSceneSources: async (sceneName: string) => {
-        try {
-          const obs = getOBS();
-          const response = await obs.call('GetSceneItemList', {
-            sceneName
+          // If they pass in an array of scene names, we need to use the batch request aPI
+          // assemble the request
+          const request: RequestBatchRequest[] = sourceNames.map((sourceName) => ({
+            requestType: 'GetSourceScreenshot',
+            requestId: sourceName, // This is so we can line them up with the source names in the response
+            requestData: {
+              sourceName,
+              imageFormat: 'png',
+              imageWidth: Math.floor(1920 / 8),
+              imageHeight: Math.floor(1080 / 8)
+            }
+          }));
+          const previews = await obs.callBatch(request, {
+            // Parallel execution is disabled as the data is returned in a random order: https://github.com/obsproject/obs-websocket/issues/1317
+            // executionType: 2 // Parallel
           });
+          // line them up with the source names
+          const previewsWithSourceNames = Object.fromEntries(previews.map((response, i) => [response.requestId, response.responseData?.imageData as string]));
+          set(() => ({
+            scenePreviews: previewsWithSourceNames,
+            error: null
+          }), false, `FetchedPreview_${sourceNames}`);
+          return;
+
+        } catch (error) {
+          set({ error: `Failed to fetch preview for ${sourceNames}` }, false, `FetchPreviewError_${sourceNames}`);
+          throw error;
+        }
+      },
+
+      fetchSceneSources: async (sceneNames: string[]) => {
+        if (!sceneNames?.length) return;
+        console.debug('Fetching sources for scenes', sceneNames);
+        try {
+          const obs = getOBS();
+          // Create batch request for multiple scene sources
+          const request: RequestBatchRequest[] = sceneNames.map((sceneName) => ({
+            requestType: 'GetSceneItemList',
+            requestId: sceneName, // This is so we can line them up with the scene names in the response
+            requestData: {
+              sceneName
+            }
+          }));
+
+          const responses = await obs.callBatch(request);
+
+          // Line them up with the scene names and create the sources object
+          const sourcesWithSceneNames = Object.fromEntries(
+            responses.map((response) => [
+              response.requestId,
+              (response.responseData as unknown as { sceneItems: Source[] })?.sceneItems || []
+            ])
+          );
 
           set((state) => ({
             sceneSources: {
               ...state.sceneSources,
-              [sceneName]: response.sceneItems
+              ...sourcesWithSceneNames
             },
             error: null
-          }), false, `FetchedSources_${sceneName}`);
+          }), false, `FetchedSources_${sceneNames.join(',')}`);
         } catch (error) {
-          set({ error: `Failed to fetch sources for ${sceneName}` }, false, `FetchSourcesError_${sceneName}`);
+          set({ error: `Failed to fetch sources for ${sceneNames.join(', ')}` }, false, `FetchSourcesError_${sceneNames.join(',')}`);
           throw error;
         }
       },
@@ -252,15 +315,10 @@ export const useOBSStore = create<OBSState>()(
           if (!state.isConnected) return;
 
           try {
-            // TODO: use Batching https://github.com/obsproject/obs-websocket/blob/master/docs/generated/protocol.md#requestbatchexecutiontype
-            await Promise.all([
-              ...state.scenes.map(scene =>
-                state.fetchScenePreview(scene.sceneName)
-              ),
-              state.fetchOutputs()
-            ]);
+            const sourceNames = state.scenes.map(scene => scene.sceneName);
+            await state.fetchScenePreview(sourceNames);
             // Recursively call the poll function again as soon as possible
-            setTimeout(poll, 5000);
+            setTimeout(poll, 33);
             // poll();
           } catch (error) {
             console.error('Polling error:', error);
@@ -285,7 +343,7 @@ export const useOBSStore = create<OBSState>()(
         pollRecordStatus();
         // Set up intervals
         // pollingInterval = setInterval(poll, 5000);
-        recordStatusInterval = setInterval(pollRecordStatus, 1000);
+        // recordStatusInterval = setInterval(pollRecordStatus, 1000);
         set({ isPolling: true }, false, 'StartedPolling');
       },
 
