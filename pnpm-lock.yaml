@@ -23,6 +23,9 @@ importers:
       react-dom:
         specifier: ^19.1.0
         version: 19.1.1(react@19.1.1)
+      wrangler:
+        specifier: ^4.36.0
+        version: 4.36.0
       zustand:
         specifier: ^5.0.5
         version: 5.0.8(@types/react@19.1.13)(react@19.1.1)
