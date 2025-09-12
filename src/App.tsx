@@ -1,12 +1,12 @@
 import { useEffect, useState } from 'react';
 import { useOBSStore } from './store/obsStore';
-import { Scene } from './components/Scene';
 import { StatusBar } from './components/StatusBar';
 import './App.css';
 import { ConnectionStringInput } from './components/ConnectionStringInput';
 import './components/ConnectionStringInput.css';
 import { OBSDebugger } from './components/OBSDebugger';
-import { Sources } from './components/Sources';
+import { MediaItem } from './components/MediaItem';
+import { uniqueSceneSources } from './utils/sources';
 
 export function App() {
   const [connectionString, setConnectionString] = useState(localStorage.getItem('obsConnectionString'));
@@ -18,6 +18,7 @@ export function App() {
   const stopPolling = useOBSStore(state => state.stopPolling);
   const isConnected = useOBSStore(state => state.isConnected);
   const scenes = useOBSStore(state => state.scenes);
+  const sceneSources = useOBSStore(state => state.sceneSources);
   const error = useOBSStore(state => state.error);
 
   useEffect(() => {
@@ -60,17 +61,39 @@ export function App() {
     return <ConnectionStringInput onConnect={handleConnect} initialConnectionString={connectionString || 'ws://127.0.0.1:4455'} error={error} />;
   }
 
+  // Create combined list of scenes and sources
+  const sources = uniqueSceneSources(sceneSources);
+  const mediaItems = [
+    // Add scenes first
+    ...scenes.map(scene => ({
+      type: 'scene' as const,
+      key: `scene-${scene.sceneName}`,
+      name: scene.sceneName,
+      source: undefined
+    })),
+    // Add sources second
+    ...sources.map(source => ({
+      type: 'source' as const,
+      key: `source-${source.sourceUuid}`,
+      name: source.sourceName,
+      source: source
+    }))
+  ];
+
   return (
     <div className="app">
       <StatusBar />
-      <OBSDebugger />
-      {/* <OutputList /> */}
+      {/* <OBSDebugger /> */}
       <div className="scenes-grid">
-        {scenes.map(scene => (
-          <Scene key={scene.sceneName} sceneName={scene.sceneName} />
+        {mediaItems.map(item => (
+          <MediaItem
+            key={item.key}
+            type={item.type}
+            name={item.name}
+            source={item.source}
+          />
         ))}
       </div>
-        <Sources />
       <footer className="app-footer">
         <a
           href="https://github.com/wesbos/source-record-ui"

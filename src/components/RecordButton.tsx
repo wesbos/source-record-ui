@@ -13,7 +13,7 @@ interface Filter {
 export function RecordButton() {
   const { recordState } = useOBSStore();
   const filters = useOBSStore(state => state.sceneFilters);
-  const scenesWithRecordFilter = Object.values(filters).flat().filter(filter =>
+  const scenesorSourcesWithRecordFilter = Object.values(filters).flat().filter(filter =>
     filter.filterKind === 'source_record_filter' && filter.filterEnabled
   );
 
@@ -24,24 +24,24 @@ export function RecordButton() {
           className="record-button start"
           onClick={async () => {
             try {
-              console.info(`Starting recording for ${scenesWithRecordFilter.length} scenes`);
-              for (const sceneName in filters) {
-                for (const filter of filters[sceneName]) {
+              console.info(`Starting recording for ${scenesorSourcesWithRecordFilter.length} scenes`);
+              for (const sourceName in filters) {
+                for (const filter of filters[sourceName]) {
                   if (filter.filterKind !== 'source_record_filter') continue;
-                  const filterName = `Source Record - ${sceneName}`;
-                  const filename = `%CCYY-%MM-%DD %I %mm %ss %p/${sceneName}`;
+                  const filterName = `Source Record - ${sourceName}`;
+                  const filename = `%CCYY-%MM-%DD %I %mm %ss %p/${sourceName}`;
 
                   if (filter.filterName !== filterName) {
                     await obs.call('SetSourceFilterName', {
-                      sourceName: sceneName,
+                      sourceName: sourceName,
                       filterName: filter.filterName,
                       newFilterName: filterName
                     });
                   }
 
                   await obs.call('SetSourceFilterSettings', {
-                    sourceName: sceneName,
-                    filterName: filter.filterName,
+                    sourceName: sourceName,
+                    filterName,
                     overlay: true,
                     filterSettings: { filename_formatting: filename }
                   });
@@ -52,9 +52,9 @@ export function RecordButton() {
               console.error('Failed to start recording:', error);
             }
           }}
-          title={`Start Recording (${scenesWithRecordFilter.length} scenes)`}
+          title={`Start Recording (${scenesorSourcesWithRecordFilter.length} scenes)`}
         >
-          Start Recording ({scenesWithRecordFilter.length} sources)
+          Start Recording ({scenesorSourcesWithRecordFilter.length} sources)
         </button>
       ) : (
         <button

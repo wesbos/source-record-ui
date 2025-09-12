@@ -42,6 +42,12 @@
   margin: 0 0 0.5rem 0;
   font-size: 1rem;
   color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-align: center;
+  justify-content: center;
+  margin: 0;
 }
 
 .source-list,
@@ -121,4 +127,9 @@ pre {
   background: #1a1a1a;
   border-radius: 8px;
   border: 1px solid #f44336;
+}
+
+.light {
+  color: rgba(255, 255, 255, 0.3);
+  font-size: 0.75rem;
 }

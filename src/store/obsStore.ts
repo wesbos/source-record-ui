@@ -14,12 +14,21 @@ export interface Source {
   inputKind: string;
 }
 
+interface OutputFlags {
+  OBS_OUTPUT_VIDEO: boolean;
+  OBS_OUTPUT_AUDIO: boolean;
+  OBS_OUTPUT_ENCODED: boolean;
+  OBS_OUTPUT_MULTI_TRACK: boolean;
+  OBS_OUTPUT_SERVICE: boolean;
+}
+
 interface Output {
   outputName: string;
   outputType: string;
   outputWidth: number;
   outputHeight: number;
-  outputFlags: number;
+  outputFlags: OutputFlags;
+  outputActive: boolean;
 }
 
 interface RecordState {
@@ -126,11 +135,6 @@ export const useOBSStore = create<OBSState>()(
           obs.on('RecordStateChanged', (data) => {
             console.debug('RecordStateChanged', data);
             set({ recordState: data }, false, 'RecordStateChanged');
-          });
-
-          obs.on('RecordStateChanged', (data) => {
-            console.debug('RecordFileChanged', data);
-            console.info(`Record file changed:`, data);
           });
 
           obs.on('VirtualcamStateChanged', (data) => {
