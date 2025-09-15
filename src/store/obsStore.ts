@@ -92,7 +92,7 @@ export const useOBSStore = create<OBSState>()(
       isPolling: false,
       isStreaming: false,
       recordState: {
-        outputState: undefined
+        outputState: 'OBS_WEBSOCKET_OUTPUT_STOPPED'
       },
       recordStatus: {
         outputActive: false,
@@ -353,7 +353,7 @@ export const useOBSStore = create<OBSState>()(
           try {
             const obs = getOBS();
             const recordStatus = await obs.call('GetRecordStatus');
-            set({ reecordStatus }, false, 'PolledRecordStatus');
+            set({ recordStatus }, false, 'PolledRecordStatus');
             setTimeout(pollRecordStatus, 1000);
           } catch (error) {
             console.error('Record status polling error:', error);

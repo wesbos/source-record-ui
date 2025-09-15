@@ -85,7 +85,7 @@ export function App() {
 
 
   return (
-    <div className="app" data-record-state={recordState.outputState}>
+    <div className="app" data-record-state={recordState.outputState.split('_').at(-1)}>
       <StatusBar />
       {/* <p className="white">Record Status: {JSON.stringify(recordStatus)}</p>
       <p className="white">Record State: {JSON.stringify(recordState)}</p>
